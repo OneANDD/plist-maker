@@ -12,3 +12,4 @@
 - [x] Re-check that the deployed bundle at the plain GitHub Pages URL contains the latest route correction before closing the Pages issue.
 - [x] Verify the plain GitHub Pages URL in a fresh browser session after cache expiry and confirm that it renders the Plist Maker homepage without query parameters.
 - [x] Replace the passive PNG/JPG staging panel with a working drag-and-drop icon uploader that securely hosts the selected image and automatically populates the icon URL.
+- [x] Fix the deployed `manifest.uploadIcon` procedure mismatch so the live drag-and-drop uploader can complete an icon upload.

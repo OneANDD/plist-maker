@@ -35,3 +35,7 @@ After the GitHub Pages entry-document cache window expired, the plain URL `https
 ## Icon drag-and-drop upload
 
 The passive icon preview panel has been replaced by a real PNG/JPG drop target. It supports clicking to browse or dropping an image directly, validates the selected image type and size before upload, securely stores the icon, and writes the returned public HTTPS URL into the icon field. Desktop and mobile screenshots confirm that the new uploader is visible and usable at both breakpoints. The upload validation unit tests and the router-level storage contract test cover valid PNG/JPG inputs, invalid/mismatched files, storage payload type, and returned hosted URL behavior.
+
+## Live icon-upload endpoint repair
+
+The user-reported missing-procedure response occurred while the deployed frontend and backend versions were temporarily out of sync. The live `manifest.uploadIcon` endpoint now recognizes the procedure: an invalid image reaches server-side validation, and a valid PNG test upload completed successfully, returning a public hosted icon URL. Cross-origin response headers permit the GitHub Pages frontend to invoke the procedure.
