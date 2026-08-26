@@ -10,4 +10,8 @@ The automated reference-manifest test suite passes. It verifies the required OTA
 
 ## Deployment boundary
 
-The interface deliberately separates local file generation from public deployment. A downloaded `.plist` must be hosted at a public HTTPS URL, and the signed IPA and icon must be available through public HTTPS URLs before the resulting `itms-services://` link can install on an Apple device.
+The interface now publishes a unique `.plist` to built-in storage when the user chooses **Publish & create install link**. It derives the public HTTPS manifest address from the live site origin, then creates the encoded `itms-services://` link. The signed IPA and icon must still be available through public HTTPS URLs before the resulting link can install on an Apple device.
+
+## Automatic-hosting verification
+
+The full test suite passes with four tests across three files. It covers reference plist structure, blank-template values, secure filename normalization, encoded installation-link construction, HTTPS-origin generation, and the publishing procedure’s storage contract. TypeScript checking and the production build also pass. The rendered interface shows the replacement of the manual manifest-URL field with a **Publish & create install link** action, an inactive install-link state before publication, and the copy–paste–Safari installation instructions after publication.

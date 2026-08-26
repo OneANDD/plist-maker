@@ -16,9 +16,9 @@ import {
   PackageCheck,
   ShieldCheck,
   Sparkles,
-  Upload,
 } from "lucide-react";
 import { toast } from "sonner";
+import { trpc } from "@/lib/trpc";
 import {
   buildManifest,
   escapeXml,
@@ -49,6 +49,12 @@ const blankTemplate: ManifestFields = {
   manifestUrl: "",
 };
 
+type PublishedManifest = {
+  manifestFilename: string;
+  manifestUrl: string;
+  installUrl: string;
+};
+
 function CodeLine({ line, number }: { line: string; number: number }) {
   const colored = escapeXml(line)
     .replace(/(&lt;!DOCTYPE.*?&gt;)/g, '<span class="xml-doctype">$1</span>')
@@ -66,6 +72,14 @@ export default function Home() {
   const [iconPreview, setIconPreview] = useState<string | null>(null);
   const [iconFileName, setIconFileName] = useState("");
   const [copied, setCopied] = useState<"manifest" | "install" | null>(null);
+  const [publishedManifest, setPublishedManifest] = useState<PublishedManifest | null>(null);
+  const publishMutation = trpc.manifest.publish.useMutation({
+    onSuccess: (result) => {
+      setPublishedManifest(result);
+      toast.success("Manifest published and ready", { description: "Copy the installation link, paste it into Safari on your Apple device, then continue to install." });
+    },
+    onError: (error) => toast.error("The manifest could not be published", { description: error.message }),
+  });
 
   useEffect(() => {
     return () => {
@@ -88,17 +102,18 @@ export default function Home() {
   const allValid = checks.every((check) => check.valid);
   const manifest = useMemo(() => buildManifest(fields), [fields]);
   const manifestFilename = `${normalizedManifestName(fields.manifestName)}.plist`;
-  const validManifestUrl = isHttpsUrl(fields.manifestUrl) && /\.plist(?:[?#]|$)/i.test(fields.manifestUrl);
-  const installUrl = validManifestUrl
-    ? `itms-services://?action=download-manifest&url=${encodeURIComponent(fields.manifestUrl.trim())}`
-    : "";
+  const installUrl = publishedManifest?.installUrl ?? "";
 
-  const update = (key: keyof ManifestFields, value: string) => setFields((current) => ({ ...current, [key]: value }));
+  const update = (key: keyof ManifestFields, value: string) => {
+    setPublishedManifest(null);
+    setFields((current) => ({ ...current, [key]: value }));
+  };
 
   const loadSample = () => {
     setFields(sample);
     setIconPreview(null);
     setIconFileName("");
+    setPublishedManifest(null);
     toast.success("Reference example loaded", { description: "These values came from the supplied sample. Replace them with your own before downloading." });
   };
 
@@ -116,18 +131,33 @@ export default function Home() {
     anchor.click();
     anchor.remove();
     URL.revokeObjectURL(downloadUrl);
-    toast.success(`${manifestFilename} downloaded`, { description: "Host this exact file at the public HTTPS address used below." });
+    toast.success(`${manifestFilename} downloaded`, { description: "You can keep a local copy. Use Publish & create install link for automatic HTTPS hosting." });
+  };
+
+  const publishManifest = () => {
+    if (!allValid) {
+      toast.error("Complete the required manifest fields first.");
+      return;
+    }
+    publishMutation.mutate({
+      ipaUrl: fields.ipaUrl,
+      iconUrl: fields.iconUrl,
+      bundleIdentifier: fields.bundleIdentifier,
+      bundleVersion: fields.bundleVersion,
+      appName: fields.appName,
+      manifestName: normalizedManifestName(fields.manifestName),
+    });
   };
 
   const copy = async (kind: "manifest" | "install", value: string) => {
     if (!value) {
-      toast.error("Add a public HTTPS .plist URL first.");
+      toast.error(kind === "install" ? "Publish the manifest first." : "Nothing is available to copy yet.");
       return;
     }
     await navigator.clipboard.writeText(value);
     setCopied(kind);
     window.setTimeout(() => setCopied(null), 1700);
-    toast.success(kind === "install" ? "iOS installation link copied" : "Manifest URL copied");
+    toast.success(kind === "install" ? "iOS installation link copied" : "Manifest XML copied");
   };
 
   const handleIconFile = (file: File | undefined) => {
@@ -149,14 +179,14 @@ export default function Home() {
           <img src="/manus-storage/plist-maker-logo_ffd9f3ec.png" alt="" className="brand-mark" />
           <span className="brand-name"><em>Plist</em><span>Maker</span><small>OTA</small></span>
         </a>
-        <div className="topbar-note"><ShieldCheck size={15} /> Local generation. Nothing is uploaded.</div>
+        <div className="topbar-note"><ShieldCheck size={15} /> Publish a unique HTTPS manifest when ready.</div>
       </header>
 
       <main id="top" className="workspace">
         <aside className="left-rail" aria-label="Workflow steps">
           <div className="rail-eyebrow">OTA manifest studio</div>
           <h1>Shape the manifest.<br /><i>Keep the chain intact.</i></h1>
-          <p className="rail-intro">Build the file iOS reads to locate your signed IPA, app icon, and metadata. The final install link must target a publicly hosted HTTPS manifest.</p>
+          <p className="rail-intro">Build the file iOS reads to locate your signed IPA, app icon, and metadata. When ready, this workshop publishes the HTTPS manifest for you.</p>
 
           <div className="steps">
             <div className="step step-active"><span>01</span><div><strong>App source</strong><small>IPA &amp; icon address</small></div></div>
@@ -175,14 +205,14 @@ export default function Home() {
             <div className="hero-copy">
               <p className="eyebrow">Manifest Workshop <span>•</span> v1.0</p>
               <h2>A blank manifest, ready for your <em>own install details.</em></h2>
-              <p>Start with the empty template, add your hosted app details, and download a reference-compatible XML artifact.</p>
+              <p>Start with the empty template, add your hosted app details, and publish an install-ready XML artifact in one step.</p>
             </div>
             <img src="/manus-storage/plist-maker-hero_265ccbbe.jpg" alt="Abstract manifest document, cobalt tab, and deployment materials on a paper desk" className="hero-image" />
             <div className="hero-annotation"><span>FIELD NOTE 04</span><b>SIGNED IPA →<br />HTTPS MANIFEST</b></div>
           </div>
 
           <div className="content-grid">
-            <form className="form-stack" onSubmit={(event) => { event.preventDefault(); downloadManifest(); }}>
+            <form className="form-stack" onSubmit={(event) => { event.preventDefault(); publishManifest(); }}>
               <section className="form-section">
                 <div className="section-heading"><span className="step-chip">01</span><div><p>App source</p><h3>Where iOS will retrieve the files</h3></div></div>
                 <div className="field-group">
@@ -216,18 +246,19 @@ export default function Home() {
               </section>
 
               <section className="form-section handoff-section">
-                <div className="section-heading"><span className="step-chip">03</span><div><p>Handoff</p><h3>Name, download, and install</h3></div></div>
+                <div className="section-heading"><span className="step-chip">03</span><div><p>Handoff</p><h3>Publish and install</h3></div></div>
                 <div className="two-fields filename-fields">
                   <div className="field-group"><label htmlFor="manifest-name">Manifest filename <b>required</b></label><div className="input-suffix"><input id="manifest-name" value={fields.manifestName} onChange={(event) => update("manifestName", event.target.value)} placeholder="my-app" /><span>.plist</span></div></div>
                 <button type="button" className="sample-button" onClick={loadSample}><Sparkles size={16} /> View reference</button>
                 </div>
-                <button className="download-button" type="submit"><Download size={18} /> Download {manifestFilename}<ArrowUpRight size={17} /></button>
-                <div className="field-group manifest-url-field"><label htmlFor="manifest-url">Public manifest URL <span>required for iOS install link</span></label><div className="input-wrap"><Upload size={17} /><input id="manifest-url" type="url" value={fields.manifestUrl} onChange={(event) => update("manifestUrl", event.target.value)} placeholder="https://example.com/my-app.plist" /></div></div>
+                <button className="download-button" type="submit" disabled={publishMutation.isPending}><Link2 size={18} /> {publishMutation.isPending ? "Publishing manifest…" : "Publish & create install link"}<ArrowUpRight size={17} /></button>
+                <button className="download-copy-button" type="button" onClick={downloadManifest}><Download size={16} /> Also download {manifestFilename}</button>
                 <div className="install-link-box">
-                  <div className="install-label"><span>iOS installation link</span>{validManifestUrl ? <b><Check size={13} /> Ready</b> : <b className="pending">Needs HTTPS URL</b>}</div>
-                  <code>{installUrl || "itms-services://?action=download-manifest&url=https%3A%2F%2Fyour-host%2Fmanifest.plist"}</code>
-                  <div className="install-actions"><button type="button" onClick={() => copy("install", installUrl)}>{copied === "install" ? <Check size={16} /> : <Clipboard size={16} />}{copied === "install" ? "Copied" : "Copy install link"}</button>{installUrl && <a href={installUrl}><ChevronRight size={16} /> Open on iOS</a>}</div>
+                  <div className="install-label"><span>iOS installation link</span>{publishedManifest ? <b><Check size={13} /> Ready</b> : <b className="pending">Publish to create</b>}</div>
+                  <code>{installUrl || "Your install-ready link appears here after publishing."}</code>
+                  <div className="install-actions"><button type="button" disabled={!installUrl} onClick={() => copy("install", installUrl)}>{copied === "install" ? <Check size={16} /> : <Clipboard size={16} />}{copied === "install" ? "Copied" : "Copy install link"}</button>{installUrl ? <a href={installUrl}><ChevronRight size={16} /> Open on iOS</a> : <button type="button" disabled><ChevronRight size={16} /> Open on iOS</button>}</div>
                 </div>
+                {publishedManifest ? <div className="install-guide"><div className="guide-heading"><Check size={15} /> Your manifest is hosted</div><p>On the Apple device you want to install on:</p><ol><li>Tap <strong>Copy install link</strong>.</li><li>Open <strong>Safari</strong>, paste the link into the address bar, and tap Go.</li><li>When iOS prompts you, tap <strong>Install</strong>.</li></ol></div> : <div className="auto-host-note"><Info size={15} /> No manual manifest URL is needed. Publishing creates a unique public HTTPS address automatically.</div>}
               </section>
             </form>
 
