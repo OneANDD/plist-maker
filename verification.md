@@ -31,3 +31,7 @@ Subsequent plain-URL HTTP checks confirmed that GitHub Pages now serves the curr
 A fresh verification browser session still loaded the stale `index-BrZNARFQ.js` bundle even though the GitHub main branch contains the corrected fallback routing. This requires checking browser-level persistence or replacing the stale entry document through a new Pages deployment identifier before the plain URL can be closed as verified.
 
 After the GitHub Pages entry-document cache window expired, the plain URL `https://oneandd.github.io/plist-maker/` was verified directly in the browser without query parameters. It rendered the complete Plist Maker homepage, including its blank manifest workspace, automatic publish control, and hosted visual assets.
+
+## Icon drag-and-drop upload
+
+The passive icon preview panel has been replaced by a real PNG/JPG drop target. It supports clicking to browse or dropping an image directly, validates the selected image type and size before upload, securely stores the icon, and writes the returned public HTTPS URL into the icon field. Desktop and mobile screenshots confirm that the new uploader is visible and usable at both breakpoints. The upload validation unit tests and the router-level storage contract test cover valid PNG/JPG inputs, invalid/mismatched files, storage payload type, and returned hosted URL behavior.

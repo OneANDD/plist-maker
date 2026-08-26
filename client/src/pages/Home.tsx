@@ -13,9 +13,11 @@ import {
   FileImage,
   Info,
   Link2,
+  LoaderCircle,
   PackageCheck,
   ShieldCheck,
   Sparkles,
+  UploadCloud,
 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
@@ -74,8 +76,19 @@ export default function Home() {
   const [fields, setFields] = useState<ManifestFields>(blankTemplate);
   const [iconPreview, setIconPreview] = useState<string | null>(null);
   const [iconFileName, setIconFileName] = useState("");
+  const [isDraggingIcon, setIsDraggingIcon] = useState(false);
   const [copied, setCopied] = useState<"manifest" | "install" | null>(null);
   const [publishedManifest, setPublishedManifest] = useState<PublishedManifest | null>(null);
+  const uploadIconMutation = trpc.manifest.uploadIcon.useMutation({
+    onSuccess: (result) => {
+      setPublishedManifest(null);
+      setFields((current) => ({ ...current, iconUrl: result.iconUrl }));
+      setIconPreview(result.iconUrl);
+      setIconFileName(result.filename);
+      toast.success("Icon uploaded", { description: "The public HTTPS icon URL has been added to your manifest." });
+    },
+    onError: (error) => toast.error("Icon upload failed", { description: error.message }),
+  });
   const publishMutation = trpc.manifest.publish.useMutation({
     onSuccess: (result) => {
       setPublishedManifest(result);
@@ -163,16 +176,38 @@ export default function Home() {
     toast.success(kind === "install" ? "iOS installation link copied" : "Manifest XML copied");
   };
 
-  const handleIconFile = (file: File | undefined) => {
+  const encodeFileAsBase64 = (file: File) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(",")[1] ?? "");
+    reader.onerror = () => reject(new Error("The image could not be read."));
+    reader.readAsDataURL(file);
+  });
+
+  const handleIconFile = async (file: File | undefined) => {
     if (!file) return;
     if (!/image\/(png|jpeg)/.test(file.type)) {
       toast.error("Choose a PNG or JPG icon file.");
       return;
     }
+    if (file.size > 3 * 1024 * 1024) {
+      toast.error("Choose an icon smaller than 3 MB.");
+      return;
+    }
     if (iconPreview) URL.revokeObjectURL(iconPreview);
     setIconPreview(URL.createObjectURL(file));
     setIconFileName(file.name);
-    toast.message("Icon staged for preview", { description: "Upload it to an HTTPS host, then paste that public image URL into the manifest field." });
+    try {
+      const contentBase64 = await encodeFileAsBase64(file);
+      uploadIconMutation.mutate({ contentBase64, mimeType: file.type as "image/png" | "image/jpeg" });
+    } catch (error) {
+      toast.error("The icon could not be prepared", { description: error instanceof Error ? error.message : "Try another PNG or JPG file." });
+    }
+  };
+
+  const handleIconDrop = (event: React.DragEvent<HTMLLabelElement>) => {
+    event.preventDefault();
+    setIsDraggingIcon(false);
+    void handleIconFile(event.dataTransfer.files?.[0]);
   };
 
   return (
@@ -229,14 +264,14 @@ export default function Home() {
                     <div className="input-wrap"><Link2 size={17} /><input id="icon-url" type="url" value={fields.iconUrl} onChange={(event) => update("iconUrl", event.target.value)} placeholder="https://cdn.example.com/icon.png" /></div>
                     <p className={isImageUrl(fields.iconUrl) ? "field-note valid" : "field-note"}>{isImageUrl(fields.iconUrl) ? "PNG/JPG address recognized." : "Use a public HTTPS PNG or JPG."}</p>
                   </div>
-                  <label className="icon-dropzone" htmlFor="icon-file">
-                    {iconPreview ? <img src={iconPreview} alt="Staged app icon preview" /> : <FileImage size={24} />}
-                    <span>{iconPreview ? iconFileName : "Stage PNG / JPG"}</span>
-                    <small>{iconPreview ? "Preview only" : "For visual review"}</small>
-                    <input id="icon-file" type="file" accept="image/png,image/jpeg" onChange={(event) => handleIconFile(event.target.files?.[0])} />
+                  <label className={`icon-dropzone ${isDraggingIcon ? "dragging" : ""} ${uploadIconMutation.isPending ? "uploading" : ""}`} htmlFor="icon-file" onDragEnter={(event) => { event.preventDefault(); setIsDraggingIcon(true); }} onDragOver={(event) => event.preventDefault()} onDragLeave={() => setIsDraggingIcon(false)} onDrop={handleIconDrop} aria-busy={uploadIconMutation.isPending}>
+                    {uploadIconMutation.isPending ? <LoaderCircle size={24} className="icon-upload-spinner" /> : iconPreview ? <img src={iconPreview} alt="Selected app icon preview" /> : <UploadCloud size={24} />}
+                    <span>{uploadIconMutation.isPending ? "Uploading icon…" : iconPreview ? iconFileName : "Drop PNG / JPG here"}</span>
+                    <small>{uploadIconMutation.isPending ? "Hosting securely" : iconPreview ? "Hosted and added" : "or click to browse"}</small>
+                    <input id="icon-file" type="file" accept="image/png,image/jpeg" disabled={uploadIconMutation.isPending} onChange={(event) => void handleIconFile(event.target.files?.[0])} />
                   </label>
                 </div>
-                <div className="callout"><Info size={16} /><span>A selected local icon is never embedded in the plist. Host it publicly over HTTPS, then add its image URL above.</span></div>
+                <div className="callout"><Info size={16} /><span>Drag in a PNG or JPG up to 3 MB. It will be securely hosted and its public HTTPS URL will be added to the manifest automatically.</span></div>
               </section>
 
               <section className="form-section">

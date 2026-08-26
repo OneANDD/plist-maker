@@ -3,6 +3,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
+import { decodeIconUpload } from "./iconUpload";
 import { buildHostedManifest, createInstallationLink, httpsOriginFromRequest, normalizedManifestName } from "./manifest";
 import { storagePut } from "./storage";
 
@@ -23,6 +24,11 @@ const publishedManifestInput = z.object({
   manifestName: z.string().trim().min(1).max(100),
 });
 
+const iconUploadInput = z.object({
+  contentBase64: z.string().min(1).max(4_200_000),
+  mimeType: z.enum(["image/png", "image/jpeg"]),
+});
+
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
   system: systemRouter,
@@ -37,6 +43,14 @@ export const appRouter = router({
     }),
   }),
   manifest: router({
+    uploadIcon: publicProcedure.input(iconUploadInput).mutation(async ({ ctx, input }) => {
+      const icon = decodeIconUpload(input);
+      const stored = await storagePut(`icons/app-icon.${icon.extension}`, icon.bytes, icon.contentType);
+      return {
+        filename: `app-icon.${icon.extension}`,
+        iconUrl: `${httpsOriginFromRequest(ctx.req)}${stored.url}`,
+      };
+    }),
     publish: publicProcedure.input(publishedManifestInput).mutation(async ({ ctx, input }) => {
       const filename = `${normalizedManifestName(input.manifestName)}.plist`;
       const manifestXml = buildHostedManifest(input);
