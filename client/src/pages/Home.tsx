@@ -55,6 +55,9 @@ type PublishedManifest = {
   installUrl: string;
 };
 
+const hostingOrigin = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
+const hostedAsset = (path: string) => `${hostingOrigin}${path}`;
+
 function CodeLine({ line, number }: { line: string; number: number }) {
   const colored = escapeXml(line)
     .replace(/(&lt;!DOCTYPE.*?&gt;)/g, '<span class="xml-doctype">$1</span>')
@@ -176,7 +179,7 @@ export default function Home() {
     <div className="min-h-screen page-shell">
       <header className="topbar">
         <a className="brand" href="#top" aria-label="Plist Maker home">
-          <img src="/manus-storage/plist-maker-logo_ffd9f3ec.png" alt="" className="brand-mark" />
+          <img src={hostedAsset("/manus-storage/plist-maker-logo_ffd9f3ec.png")} alt="" className="brand-mark" />
           <span className="brand-name"><em>Plist</em><span>Maker</span><small>OTA</small></span>
         </a>
         <div className="topbar-note"><ShieldCheck size={15} /> Publish a unique HTTPS manifest when ready.</div>
@@ -207,7 +210,7 @@ export default function Home() {
               <h2>A blank manifest, ready for your <em>own install details.</em></h2>
               <p>Start with the empty template, add your hosted app details, and publish an install-ready XML artifact in one step.</p>
             </div>
-            <img src="/manus-storage/plist-maker-hero_265ccbbe.jpg" alt="Abstract manifest document, cobalt tab, and deployment materials on a paper desk" className="hero-image" />
+            <img src={hostedAsset("/manus-storage/plist-maker-hero_265ccbbe.jpg")} alt="Abstract manifest document, cobalt tab, and deployment materials on a paper desk" className="hero-image" />
             <div className="hero-annotation"><span>FIELD NOTE 04</span><b>SIGNED IPA →<br />HTTPS MANIFEST</b></div>
           </div>
 

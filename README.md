@@ -29,10 +29,14 @@ pnpm build
 
 ## Installation-link handoff
 
-1. Download the generated manifest, for example `test.plist`.
-2. Upload it to a public HTTPS address such as `https://example.com/test.plist`.
-3. Paste that exact public URL in **Public manifest URL**.
-4. Copy the generated `itms-services://?action=download-manifest&url=…` link and open it in Safari on the intended Apple device.
+1. Enter public HTTPS URLs for the signed IPA and icon, plus the matching app metadata.
+2. Choose **Publish & create install link**.
+3. The live service saves a unique manifest at a public HTTPS address and presents the encoded `itms-services://` link.
+4. On the target Apple device, copy the link, open Safari, paste it into the address bar, and continue when iOS prompts to install.
+
+## GitHub Pages frontend
+
+The repository includes a GitHub Actions workflow that deploys the compiled frontend to `https://oneandd.github.io/plist-maker/`. GitHub Pages is static hosting, so the deployed frontend calls the live Plist Maker service at `https://plistmaker-ajxufyus.manus.space` for automatic manifest publishing and hosted visual assets. Enable **Settings → Pages → Source → GitHub Actions** in the repository to activate the workflow.
 
 ## Project boundaries
 
