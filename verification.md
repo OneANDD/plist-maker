@@ -15,3 +15,7 @@ The interface now publishes a unique `.plist` to built-in storage when the user 
 ## Automatic-hosting verification
 
 The full test suite passes with four tests across three files. It covers reference plist structure, blank-template values, secure filename normalization, encoded installation-link construction, HTTPS-origin generation, and the publishing procedure’s storage contract. TypeScript checking and the production build also pass. The rendered interface shows the replacement of the manual manifest-URL field with a **Publish & create install link** action, an inactive install-link state before publication, and the copy–paste–Safari installation instructions after publication.
+
+## GitHub Pages deployment
+
+The initial Pages site used legacy branch publishing from the repository root and therefore rendered `README.md`. The project now contains a GitHub Actions Pages workflow that builds the frontend with the `/plist-maker/` base path and routes publishing requests to the live service. The first two workflow runs exposed pnpm setup errors; those were corrected. GitHub Actions run `33018327117` completed successfully with the build and deployment jobs both passing.
