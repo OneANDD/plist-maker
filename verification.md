@@ -19,3 +19,5 @@ The full test suite passes with four tests across three files. It covers referen
 ## GitHub Pages deployment
 
 The initial Pages site used legacy branch publishing from the repository root and therefore rendered `README.md`. The project now contains a GitHub Actions Pages workflow that builds the frontend with the `/plist-maker/` base path and routes publishing requests to the live service. The first two workflow runs exposed pnpm setup errors; those were corrected. GitHub Actions run `33018327117` completed successfully with the build and deployment jobs both passing.
+
+The subsequent route-specific Pages deployment also completed successfully, but visual verification showed that Wouter still selected the single-page fallback 404 component at `/plist-maker/`. The deployment artifact and static asset base are therefore working; the remaining correction is to make the application fallback render the home experience for GitHub Pages paths.

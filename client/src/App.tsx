@@ -14,8 +14,8 @@ function Router() {
       <Route path={"/plist-maker"} component={Home} />
       <Route path={"/plist-maker/"} component={Home} />
       <Route path={"/404"} component={NotFound} />
-      {/* Final fallback route */}
-      <Route component={NotFound} />
+      {/* GitHub Pages serves this as a single-page app under /plist-maker/. */}
+      <Route component={Home} />
     </Switch>
   );
 }
