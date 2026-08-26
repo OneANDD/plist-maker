@@ -39,6 +39,16 @@ const sample = {
   manifestUrl: "https://example.com/test.plist",
 };
 
+const blankTemplate: ManifestFields = {
+  ipaUrl: "",
+  iconUrl: "",
+  bundleIdentifier: "",
+  bundleVersion: "",
+  appName: "",
+  manifestName: "manifest",
+  manifestUrl: "",
+};
+
 function CodeLine({ line, number }: { line: string; number: number }) {
   const colored = escapeXml(line)
     .replace(/(&lt;!DOCTYPE.*?&gt;)/g, '<span class="xml-doctype">$1</span>')
@@ -52,7 +62,7 @@ function CodeLine({ line, number }: { line: string; number: number }) {
 }
 
 export default function Home() {
-  const [fields, setFields] = useState<ManifestFields>(sample);
+  const [fields, setFields] = useState<ManifestFields>(blankTemplate);
   const [iconPreview, setIconPreview] = useState<string | null>(null);
   const [iconFileName, setIconFileName] = useState("");
   const [copied, setCopied] = useState<"manifest" | "install" | null>(null);
@@ -89,7 +99,7 @@ export default function Home() {
     setFields(sample);
     setIconPreview(null);
     setIconFileName("");
-    toast.success("Reference values restored", { description: "The supplied sample manifest is now reflected in the form." });
+    toast.success("Reference example loaded", { description: "These values came from the supplied sample. Replace them with your own before downloading." });
   };
 
   const downloadManifest = () => {
@@ -164,8 +174,8 @@ export default function Home() {
           <div className="hero-panel">
             <div className="hero-copy">
               <p className="eyebrow">Manifest Workshop <span>•</span> v1.0</p>
-              <h2>A direct path from a signed IPA to an <em>installable manifest.</em></h2>
-              <p>Based on your reference plist, with field-level checks and a ready-to-download XML artifact.</p>
+              <h2>A blank manifest, ready for your <em>own install details.</em></h2>
+              <p>Start with the empty template, add your hosted app details, and download a reference-compatible XML artifact.</p>
             </div>
             <img src="/manus-storage/plist-maker-hero_265ccbbe.jpg" alt="Abstract manifest document, cobalt tab, and deployment materials on a paper desk" className="hero-image" />
             <div className="hero-annotation"><span>FIELD NOTE 04</span><b>SIGNED IPA →<br />HTTPS MANIFEST</b></div>
@@ -209,7 +219,7 @@ export default function Home() {
                 <div className="section-heading"><span className="step-chip">03</span><div><p>Handoff</p><h3>Name, download, and install</h3></div></div>
                 <div className="two-fields filename-fields">
                   <div className="field-group"><label htmlFor="manifest-name">Manifest filename <b>required</b></label><div className="input-suffix"><input id="manifest-name" value={fields.manifestName} onChange={(event) => update("manifestName", event.target.value)} placeholder="my-app" /><span>.plist</span></div></div>
-                  <button type="button" className="sample-button" onClick={loadSample}><Sparkles size={16} /> Load reference</button>
+                <button type="button" className="sample-button" onClick={loadSample}><Sparkles size={16} /> View reference</button>
                 </div>
                 <button className="download-button" type="submit"><Download size={18} /> Download {manifestFilename}<ArrowUpRight size={17} /></button>
                 <div className="field-group manifest-url-field"><label htmlFor="manifest-url">Public manifest URL <span>required for iOS install link</span></label><div className="input-wrap"><Upload size={17} /><input id="manifest-url" type="url" value={fields.manifestUrl} onChange={(event) => update("manifestUrl", event.target.value)} placeholder="https://example.com/my-app.plist" /></div></div>
@@ -222,14 +232,14 @@ export default function Home() {
             </form>
 
             <aside className="output-panel" aria-live="polite">
-              <div className="output-topline"><div><span className={allValid ? "status-dot ready" : "status-dot"} /> {allValid ? "Manifest ready" : "Draft manifest"}</div><span className="artifact-label">Build artifact</span><button type="button" onClick={() => copy("manifest", manifest)} aria-label="Copy manifest XML">{copied === "manifest" ? <Check size={15} /> : <Clipboard size={15} />}</button></div>
+              <div className="output-topline"><div><span className={allValid ? "status-dot ready" : "status-dot"} /> {allValid ? "Manifest ready" : "Empty template"}</div><span className="artifact-label">Build artifact</span><button type="button" onClick={() => copy("manifest", manifest)} aria-label="Copy manifest XML">{copied === "manifest" ? <Check size={15} /> : <Clipboard size={15} />}</button></div>
               <div className="paper-preview">
                 <div className="paper-fold" />
                 <div className="paper-heading"><FileCode2 size={17} /><span>{manifestFilename}</span><small>XML / PLIST</small></div>
                 <div className="code-block">{manifest.split("\n").map((line, index) => <CodeLine key={`${line}-${index}`} line={line} number={index + 1} />)}</div>
               </div>
               <div className="output-checks"><div className="checks-title"><span>Preflight</span><b>{checks.filter((check) => check.valid).length}/{checks.length}</b></div>{checks.map((check) => <div className="check-row" key={check.label}><span className={check.valid ? "check-mark good" : "check-mark"}>{check.valid ? <Check size={13} /> : ""}</span>{check.label}</div>)}</div>
-              <div className="output-tip"><Info size={16} /><p><strong>Before testing:</strong> your IPA must already be appropriately signed for the target devices. This tool creates the manifest; it does not sign or host application files.</p></div>
+              <div className="output-tip"><Info size={16} /><p><strong>How to fill this:</strong> enter each hosted URL and the metadata from your signed IPA. The blank strings in this preview are replaced as you type.</p></div>
             </aside>
           </div>
         </section>

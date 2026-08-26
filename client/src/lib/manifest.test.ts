@@ -33,4 +33,20 @@ describe("Apple OTA plist creation", () => {
     expect(isImageUrl("https://cdn.example.com/icon.JPG")).toBe(true);
     expect(normalizedManifestName(" My App.plist ")).toBe("My-App");
   });
+
+  it("creates an empty fill-in template before the user enters their own metadata", () => {
+    const emptyManifest = buildManifest({
+      ipaUrl: "",
+      iconUrl: "",
+      bundleIdentifier: "",
+      bundleVersion: "",
+      appName: "",
+      manifestName: "manifest",
+      manifestUrl: "",
+    });
+
+    expect(emptyManifest).not.toContain("Hi.ham");
+    expect(emptyManifest).not.toContain("signed_T7k6v3qRLWiY.ipa");
+    expect(emptyManifest.match(/<string><\/string>/g)).toHaveLength(6);
+  });
 });

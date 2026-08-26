@@ -1,6 +1,6 @@
 # Plist Maker
 
-Plist Maker is a client-side utility that builds an Apple OTA installation manifest based on the XML structure in `Test.plist.xml`. It generates the `.plist` locally in the browser and constructs an `itms-services://` link once you enter the public HTTPS URL where that downloaded manifest will be hosted.
+Plist Maker is a client-side utility that starts with an empty Apple OTA installation manifest based on the XML structure in `Test.plist.xml`. It generates the `.plist` locally in the browser and constructs an `itms-services://` link once you enter the public HTTPS URL where that downloaded manifest will be hosted. The reference values are available only as an optional in-app example; they are never prefilled into the blank template.
 
 ## What it creates
 
